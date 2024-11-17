@@ -6,17 +6,28 @@ body {
     padding: 20px;
 }
 
+h1 {
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 20px;
+}
+
 #controls {
     margin-bottom: 20px;
 }
 
 #canvas-container {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 20px;
+    max-width: 800px;
+    margin: 0 auto; /* Центрирование сетки */
 }
 
 canvas {
     border: 1px solid #ccc;
-    margin: 10px;
+    width: 100%; /* Чтобы канвасы вписывались в ячейки */
+    height: auto;
+    aspect-ratio: 1 / 1; /* Устанавливает квадратное соотношение сторон */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
