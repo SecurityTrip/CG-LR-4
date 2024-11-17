@@ -32,6 +32,8 @@ uploadInput.addEventListener('change', (event) => {
 
         // Обработка порога
         updateThreshold(grayscaleData);
+
+        applySobel(originalCtx)
     };
 
     img.src = URL.createObjectURL(file);
