@@ -34,11 +34,12 @@ uploadInput.addEventListener('change', (event) => {
         updateThreshold(grayscaleData);
 
         // Фильтр Собеля
-        applySobel(sobelCtx, 0, 0.25); // A = 0, B = 1/4
+        processSobelFilter();
     };
 
     img.src = URL.createObjectURL(file);
 });
+
 
 // Перевод изображения в оттенки серого
 function toGrayscale(ctx) {
@@ -73,6 +74,15 @@ thresholdInput.addEventListener('input', () => {
     const grayscaleData = grayscaleCtx.getImageData(0, 0, grayscaleCtx.canvas.width, grayscaleCtx.canvas.height);
     updateThreshold(grayscaleData);
 });
+
+// Применение Фильтра Собеля
+function processSobelFilter() {
+    // Копируем данные из originalCanvas на sobelCanvas
+    sobelCtx.drawImage(originalCanvas, 0, 0);
+
+    // Применяем фильтр Собеля
+    applySobel(sobelCtx, 0, 0.25); // A = 0, B = 1/4
+}
 
 // Реализация фильтра Собеля
 function applySobel(ctx, A = 0, B = 1 / 4) {
