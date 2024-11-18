@@ -34,7 +34,9 @@ uploadInput.addEventListener('change', (event) => {
         updateThreshold(grayscaleData);
 
         // Фильтр Собеля
-        processSobelFilter();
+        processSobelFilter(sobelCtx);
+
+        // applyHoughTransform(originalCtx);
     };
 
     img.src = URL.createObjectURL(file);
@@ -76,12 +78,12 @@ thresholdInput.addEventListener('input', () => {
 });
 
 // Применение Фильтра Собеля
-function processSobelFilter() {
+function processSobelFilter(targetCtx) {
     // Копируем данные из originalCanvas на sobelCanvas
-    sobelCtx.drawImage(originalCanvas, 0, 0);
+    targetCtx.drawImage(originalCanvas, 0, 0);
 
     // Применяем фильтр Собеля
-    applySobel(sobelCtx, 0, 0.25); // A = 0, B = 1/4
+    applySobel(targetCtx, 0, 0.25); // A = 0, B = 1/4
 }
 
 // Реализация фильтра Собеля
@@ -136,3 +138,76 @@ function applySobel(ctx, A = 0, B = 1 / 4) {
     const sobelImageData = new ImageData(sobelData, width, height);
     ctx.putImageData(sobelImageData, 0, 0);
 }
+
+// function applyHoughTransform(ctx) {
+//     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+//     const data = imageData.data;
+//
+//     const width = imageData.width;
+//     const height = imageData.height;
+//
+//     // Преобразование в черно-белое (используем порог 128 для выделения контуров)
+//     const edges = [];
+//     for (let y = 0; y < height; y++) {
+//         for (let x = 0; x < width; x++) {
+//             const index = (y * width + x) * 4;
+//             const gray = data[index]; // Предполагаем, что изображение уже черно-белое
+//             edges.push(gray > 128 ? 1 : 0);
+//         }
+//     }
+//
+//     // Параметры преобразования Хафа
+//     const rhoMax = Math.ceil(Math.sqrt(width * width + height * height));
+//     const thetaSteps = 180;
+//     const accumulator = Array.from({ length: rhoMax * 2 }, () => Array(thetaSteps).fill(0));
+//
+//     // Преобразование Хафа
+//     for (let y = 0; y < height; y++) {
+//         for (let x = 0; x < width; x++) {
+//             if (edges[y * width + x] === 1) { // Если точка является краем
+//                 for (let theta = 0; theta < thetaSteps; theta++) {
+//                     const thetaRad = (Math.PI / thetaSteps) * theta;
+//                     const rho = Math.round(x * Math.cos(thetaRad) + y * Math.sin(thetaRad));
+//                     accumulator[rho + rhoMax][theta]++;
+//                 }
+//             }
+//         }
+//     }
+//
+//     // Поиск локальных максимумов
+//     const threshold = 50; // Порог для детектирования линий
+//     const lines = [];
+//     for (let rho = 0; rho < 2 * rhoMax; rho++) {
+//         for (let theta = 0; theta < thetaSteps; theta++) {
+//             if (accumulator[rho][theta] > threshold) {
+//                 lines.push({ rho: rho - rhoMax, theta });
+//             }
+//         }
+//     }
+//
+//     // Рисуем линии на новом холсте
+//     const houghCtx = document.getElementById('houghCanvas').getContext('2d');
+//     houghCtx.clearRect(0, 0, houghCtx.canvas.width, houghCtx.canvas.height);
+//     houghCtx.putImageData(imageData, 0, 0); // Копируем оригинальное изображение
+//
+//     houghCtx.strokeStyle = 'red';
+//     houghCtx.lineWidth = 1;
+//
+//     lines.forEach(({ rho, theta }) => {
+//         const thetaRad = (Math.PI / thetaSteps) * theta;
+//
+//         const x0 = Math.cos(thetaRad) * rho;
+//         const y0 = Math.sin(thetaRad) * rho;
+//
+//         const x1 = x0 + 1000 * (-Math.sin(thetaRad));
+//         const y1 = y0 + 1000 * Math.cos(thetaRad);
+//
+//         const x2 = x0 - 1000 * (-Math.sin(thetaRad));
+//         const y2 = y0 - 1000 * Math.cos(thetaRad);
+//
+//         houghCtx.beginPath();
+//         houghCtx.moveTo(x1, y1);
+//         houghCtx.lineTo(x2, y2);
+//         houghCtx.stroke();
+//     });
+// }
