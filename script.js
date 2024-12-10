@@ -80,7 +80,7 @@ thresholdInput.addEventListener('input', () => {
 // Применение Фильтра Собеля
 function processSobelFilter(targetCtx) {
     // Копируем данные из originalCanvas на sobelCanvas
-    targetCtx.drawImage(originalCanvas, 0, 0);
+    targetCtx.drawImage(grayscaleCanvas, 0, 0);
 
     // Применяем фильтр Собеля
     applySobel(targetCtx, 0, 0.25); // A = 0, B = 1/4
