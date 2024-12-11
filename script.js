@@ -16,15 +16,16 @@ uploadInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const img = new Image();
-    img.onload = () => {
+    const imgOriginal = new Image();
+    imgOriginal.onload = () => {
+        // Масштабирование canvas под размеры изображения
         [originalCanvas, grayscaleCanvas, thresholdedCanvas, sobelCanvas].forEach(canvas => {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            canvas.width = imgOriginal.width;
+            canvas.height = imgOriginal.height;
         });
 
         // Отобразить оригинальное изображение
-        originalCtx.drawImage(img, 0, 0);
+        originalCtx.drawImage(imgOriginal, 0, 0);
 
         // Перевод в оттенки серого
         const grayscaleData = toGrayscale(originalCtx);
@@ -35,25 +36,28 @@ uploadInput.addEventListener('change', (event) => {
 
         // Фильтр Собеля
         processSobelFilter(sobelCtx);
-
-        // applyHoughTransform(originalCtx);
     };
 
-    img.src = URL.createObjectURL(file);
+    imgOriginal.src = URL.createObjectURL(file);
 });
-
 
 // Перевод изображения в оттенки серого
 function toGrayscale(ctx) {
-    const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-    const data = imageData.data;
+    const originalImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const grayscaleImageData = ctx.createImageData(originalImageData); // Создаем пустой ImageData с теми же размерами
+    const originalData = originalImageData.data;
+    const grayscaleData = grayscaleImageData.data;
 
-    for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        data[i] = data[i + 1] = data[i + 2] = avg;
+    for (let i = 0; i < originalData.length; i += 4) {
+        // Вычисляем градацию серого с использованием формулы:
+        const gray = 0.3 * originalData[i] + 0.59 * originalData[i + 1] + 0.11 * originalData[i + 2];
+        grayscaleData[i] = gray;        // R
+        grayscaleData[i + 1] = gray;    // G
+        grayscaleData[i + 2] = gray;    // B
+        grayscaleData[i + 3] = originalData[i + 3]; // Alpha остается неизменной
     }
 
-    return imageData;
+    return grayscaleImageData; // Возвращаем обработанные данные
 }
 
 // Обработка изображения с порогом
@@ -105,7 +109,6 @@ function applySobel(ctx, A = 0, B = 1 / 4) {
 
     // Матрица Собеля
     const Mx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
-    const My = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
 
     for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
@@ -117,10 +120,8 @@ function applySobel(ctx, A = 0, B = 1 / 4) {
                 for (let kx = -1; kx <= 1; kx++) {
                     const pos = (y + ky) * width + (x + kx);
                     const weightX = Mx[(ky + 1) * 3 + (kx + 1)];
-                    const weightY = My[(ky + 1) * 3 + (kx + 1)];
 
                     pixelX += grayscale[pos] * weightX;
-                    pixelY += grayscale[pos] * weightY;
                 }
             }
 
@@ -138,76 +139,3 @@ function applySobel(ctx, A = 0, B = 1 / 4) {
     const sobelImageData = new ImageData(sobelData, width, height);
     ctx.putImageData(sobelImageData, 0, 0);
 }
-
-// function applyHoughTransform(ctx) {
-//     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-//     const data = imageData.data;
-//
-//     const width = imageData.width;
-//     const height = imageData.height;
-//
-//     // Преобразование в черно-белое (используем порог 128 для выделения контуров)
-//     const edges = [];
-//     for (let y = 0; y < height; y++) {
-//         for (let x = 0; x < width; x++) {
-//             const index = (y * width + x) * 4;
-//             const gray = data[index]; // Предполагаем, что изображение уже черно-белое
-//             edges.push(gray > 128 ? 1 : 0);
-//         }
-//     }
-//
-//     // Параметры преобразования Хафа
-//     const rhoMax = Math.ceil(Math.sqrt(width * width + height * height));
-//     const thetaSteps = 180;
-//     const accumulator = Array.from({ length: rhoMax * 2 }, () => Array(thetaSteps).fill(0));
-//
-//     // Преобразование Хафа
-//     for (let y = 0; y < height; y++) {
-//         for (let x = 0; x < width; x++) {
-//             if (edges[y * width + x] === 1) { // Если точка является краем
-//                 for (let theta = 0; theta < thetaSteps; theta++) {
-//                     const thetaRad = (Math.PI / thetaSteps) * theta;
-//                     const rho = Math.round(x * Math.cos(thetaRad) + y * Math.sin(thetaRad));
-//                     accumulator[rho + rhoMax][theta]++;
-//                 }
-//             }
-//         }
-//     }
-//
-//     // Поиск локальных максимумов
-//     const threshold = 50; // Порог для детектирования линий
-//     const lines = [];
-//     for (let rho = 0; rho < 2 * rhoMax; rho++) {
-//         for (let theta = 0; theta < thetaSteps; theta++) {
-//             if (accumulator[rho][theta] > threshold) {
-//                 lines.push({ rho: rho - rhoMax, theta });
-//             }
-//         }
-//     }
-//
-//     // Рисуем линии на новом холсте
-//     const houghCtx = document.getElementById('houghCanvas').getContext('2d');
-//     houghCtx.clearRect(0, 0, houghCtx.canvas.width, houghCtx.canvas.height);
-//     houghCtx.putImageData(imageData, 0, 0); // Копируем оригинальное изображение
-//
-//     houghCtx.strokeStyle = 'red';
-//     houghCtx.lineWidth = 1;
-//
-//     lines.forEach(({ rho, theta }) => {
-//         const thetaRad = (Math.PI / thetaSteps) * theta;
-//
-//         const x0 = Math.cos(thetaRad) * rho;
-//         const y0 = Math.sin(thetaRad) * rho;
-//
-//         const x1 = x0 + 1000 * (-Math.sin(thetaRad));
-//         const y1 = y0 + 1000 * Math.cos(thetaRad);
-//
-//         const x2 = x0 - 1000 * (-Math.sin(thetaRad));
-//         const y2 = y0 - 1000 * Math.cos(thetaRad);
-//
-//         houghCtx.beginPath();
-//         houghCtx.moveTo(x1, y1);
-//         houghCtx.lineTo(x2, y2);
-//         houghCtx.stroke();
-//     });
-// }

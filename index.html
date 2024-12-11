@@ -10,8 +10,6 @@
 <h1>Обработка изображений</h1>
 <div id="controls">
   <input type="file" id="upload" accept="image/*">
-  <label for="threshold">Порог:</label>
-  <input type="range" id="threshold" min="0" max="255" value="128">
 </div>
 <div id="canvas-container">
   <div>
@@ -24,17 +22,16 @@
   </div>
   <div>
     <a>Преобразование "серого" изображения в монохромное (пороговая обработка)</a>
+    <div>
+      <label for="threshold">Порог:</label>
+      <input type="range" id="threshold" min="0" max="255" value="128">
+    </div>
     <canvas id="thresholded"></canvas>
   </div>
   <div>
     <a>Фильтр Собеля</a>
     <canvas id="sobel"></canvas>
   </div>
-<!--  <div>-->
-<!--    <p>Векторизация (Преобразование Хафа)</p>-->
-<!--    <canvas id="houghCanvas"></canvas>-->
-<!--  </div>-->
-
 </div>
 <script src="script.js"></script>
 </body>
