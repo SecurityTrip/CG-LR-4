@@ -87,55 +87,55 @@ function processSobelFilter(targetCtx) {
     targetCtx.drawImage(grayscaleCanvas, 0, 0);
 
     // Применяем фильтр Собеля
-    applySobel(targetCtx, 0, 0.25); // A = 0, B = 1/4
+    applySobel(targetCtx);
 }
+
+
 
 // Реализация фильтра Собеля
 function applySobel(ctx) {
+    const A = 0; // Константа A
+    const B = 0.25; // Константа B
+    const N = 1; // Размер окрестности
+    const M = [
+        -1, 0, 1,
+        -2, 0, 2,
+        -1, 0, 1
+    ]; // Матрица весов
+
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const data = imageData.data;
 
     const width = imageData.width;
     const height = imageData.height;
 
-    const sobelData = new Uint8ClampedArray(data.length);
-    const grayscale = new Uint8ClampedArray(width * height);
+    const outputData = new Uint8ClampedArray(data.length);
 
-    // Преобразование в градации серого
-    for (let i = 0; i < data.length; i += 4) {
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        grayscale[i / 4] = gray;
-    }
+    for (let y = N; y < height - N; y++) {
+        for (let x = N; x < width - N; x++) {
+            let sum = 0;
 
-    // Матрица Собеля для X-направления
-    const Mx = [[-1, 0, 1], 
-                [-2, 0, 2], 
-                [-1, 0, 1]];
+            for (let j = -N; j <= N; j++) {
+                for (let i = -N; i <= N; i++) {
+                    // Индекс текущего пикселя в массиве data (умножение на 4, так как каждый пиксель представлен 4 значениями: R, G, B, A) (Особенность JS)
+                    const pos = ((y + j) * width + (x + i)) * 4;
 
-    for (let y = 1; y < height - 1; y++) {
-        for (let x = 1; x < width - 1; x++) {
-            
-            let pixelX = 0;
-
-            // Применение матрицы
-            for (let ky = -1; ky <= 1; ky++) {
-                for (let kx = -1; kx <= 1; kx++) {
-                    const pos = (y + ky) * width + (x + kx);
-                    pixelX += grayscale[pos] * Mx[(ky + 1)][(kx + 1)];;
+                    // Вычисляем значения пикселя до умножения на коэффициент
+                    sum += ((data[pos] + data[pos + 1] + data[pos + 2]) / 3) * M[(j + N) * (2 * N + 1) + (i + N)];
                 }
             }
 
-            // Вычисление значения по формуле A + B * |M|
-            const magnitude = 0 + 0.25 * Math.abs(pixelX);
-            const clamped = Math.min(255, Math.max(0, magnitude));
-            const pos = (y * width + x) * 4;
+            const result = A + B * sum;
 
-            sobelData[pos] = sobelData[pos + 1] = sobelData[pos + 2] = clamped;
-            sobelData[pos + 3] = 255; // Прозрачность
+            // Ограничиваем значение result в диапазоне от 0 до 255, чтобы оно было корректным для цвета
+            const clamped = Math.min(255, Math.max(0, result));
+
+            const pos = (y * width + x) * 4;
+            outputData[pos] = outputData[pos + 1] = outputData[pos + 2] = clamped;
+            outputData[pos + 3] = 255; // Прозрачность
         }
     }
 
-    // Результат на холсте
-    const sobelImageData = new ImageData(sobelData, width, height);
-    ctx.putImageData(sobelImageData, 0, 0);
+    const outputImageData = new ImageData(outputData, width, height);
+    ctx.putImageData(outputImageData, 0, 0);
 }
