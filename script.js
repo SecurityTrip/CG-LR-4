@@ -91,7 +91,7 @@ function processSobelFilter(targetCtx) {
 }
 
 // Реализация фильтра Собеля
-function applySobel(ctx, A = 0, B = 1 / 4) {
+function applySobel(ctx) {
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const data = imageData.data;
 
@@ -107,26 +107,26 @@ function applySobel(ctx, A = 0, B = 1 / 4) {
         grayscale[i / 4] = gray;
     }
 
-    // Матрица Собеля
-    const Mx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+    // Матрица Собеля для X-направления
+    const Mx = [[-1, 0, 1], 
+                [-2, 0, 2], 
+                [-1, 0, 1]];
 
     for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
+            
             let pixelX = 0;
-            let pixelY = 0;
 
-            // Применение матриц
+            // Применение матрицы
             for (let ky = -1; ky <= 1; ky++) {
                 for (let kx = -1; kx <= 1; kx++) {
                     const pos = (y + ky) * width + (x + kx);
-                    const weightX = Mx[(ky + 1) * 3 + (kx + 1)];
-
-                    pixelX += grayscale[pos] * weightX;
+                    pixelX += grayscale[pos] * Mx[(ky + 1)][(kx + 1)];;
                 }
             }
 
-            // Модуль градиента с учётом A и B
-            const magnitude = A + B * Math.sqrt(pixelX ** 2 + pixelY ** 2);
+            // Вычисление значения по формуле A + B * |M|
+            const magnitude = 0 + 0.25 * Math.abs(pixelX);
             const clamped = Math.min(255, Math.max(0, magnitude));
             const pos = (y * width + x) * 4;
 
