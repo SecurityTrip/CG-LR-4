@@ -19,9 +19,14 @@ uploadInput.addEventListener('change', (event) => {
     const imgOriginal = new Image();
     imgOriginal.onload = () => {
         // Масштабирование canvas под размеры изображения
-        [originalCanvas, grayscaleCanvas, thresholdedCanvas, sobelCanvas].forEach(canvas => {
+        [originalCanvas, grayscaleCanvas, thresholdedCanvas].forEach(canvas => {
             canvas.width = imgOriginal.width;
             canvas.height = imgOriginal.height;
+        });
+
+        [sobelCanvas].forEach(canvas => {
+            canvas.width = imgOriginal.width + 1;
+            canvas.height = imgOriginal.height + 1;
         });
 
         // Отобразить оригинальное изображение
@@ -41,6 +46,7 @@ uploadInput.addEventListener('change', (event) => {
     imgOriginal.src = URL.createObjectURL(file);
 });
 
+
 // Перевод изображения в оттенки серого
 function toGrayscale(ctx) {
     const originalImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -59,6 +65,67 @@ function toGrayscale(ctx) {
 
     return grayscaleImageData; // Возвращаем обработанные данные
 }
+
+imgOriginal.onload = () => {
+    // Масштабирование canvas под размеры изображения
+    [originalCanvas, grayscaleCanvas, thresholdedCanvas].forEach(canvas => {
+        canvas.width = imgOriginal.width;
+        canvas.height = imgOriginal.height;
+    });
+
+    [sobelCanvas].forEach(canvas => {
+        canvas.width = imgOriginal.width + 1;
+        canvas.height = imgOriginal.height + 1;
+    });
+
+    // Отобразить оригинальное изображение
+    originalCtx.drawImage(imgOriginal, 0, 0);
+
+    // Перевод в оттенки серого
+    const grayscaleData = toGrayscale(originalCtx);
+    grayscaleCtx.putImageData(grayscaleData, 0, 0);
+
+    // Обработка порога
+    updateThreshold(grayscaleData);
+
+    // Расширение изображения на 1 пиксель
+    const extendedImageData = extendEdges(grayscaleData, imgOriginal.width, imgOriginal.height);
+    sobelCtx.putImageData(extendedImageData, 0, 0);
+
+    // Фильтр Собеля
+    processSobelFilter(sobelCtx);
+};
+
+/**
+ * Расширяет изображение, добавляя копии краёв
+ * @param {ImageData} imageData - данные изображения
+ * @param {number} width - ширина изображения
+ * @param {number} height - высота изображения
+ * @returns {ImageData} - новые данные изображения с расширенными краями
+ */
+function extendEdges(imageData, width, height) {
+    const newWidth = width + 1;
+    const newHeight = height + 1;
+    const extendedData = new Uint8ClampedArray(newWidth * newHeight * 4);
+
+    for (let y = 0; y < newHeight; y++) {
+        for (let x = 0; x < newWidth; x++) {
+            const originalX = Math.min(x, width - 1); // Последний пиксель по горизонтали
+            const originalY = Math.min(y, height - 1); // Последний пиксель по вертикали
+            const originalIndex = (originalY * width + originalX) * 4;
+            const newIndex = (y * newWidth + x) * 4;
+
+            // Копирование RGBA из оригинального изображения
+            extendedData[newIndex] = imageData.data[originalIndex];
+            extendedData[newIndex + 1] = imageData.data[originalIndex + 1];
+            extendedData[newIndex + 2] = imageData.data[originalIndex + 2];
+            extendedData[newIndex + 3] = imageData.data[originalIndex + 3];
+        }
+    }
+
+    return new ImageData(extendedData, newWidth, newHeight);
+}
+
 
 // Обработка изображения с порогом
 function updateThreshold(grayscaleData) {
@@ -111,8 +178,8 @@ function applySobel(ctx) {
 
     const outputData = new Uint8ClampedArray(data.length);
 
-    for (let y = N; y < height - N; y++) {
-        for (let x = N; x < width - N; x++) {
+    for (let y = N; y < height; y++) {
+        for (let x = N; x < width; x++) {
             let sum = 0;
 
             for (let j = -N; j <= N; j++) {
