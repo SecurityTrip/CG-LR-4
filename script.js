@@ -149,8 +149,8 @@ function applySobel(ctx) {
 
     const outputData = new Uint8ClampedArray(data.length);
 
-    for (let y = N; y < height; y++) {
-        for (let x = N; x < width; x++) {
+    for (let y = N; y < height - N; y++) {
+        for (let x = N; x < width - N; x++) {
             let sum = 0;
 
             for (let j = -N; j <= N; j++) {
@@ -159,6 +159,7 @@ function applySobel(ctx) {
                     const pos = ((y + j) * width + (x + i)) * 4;
 
                     // Вычисляем значения пикселя до умножения на коэффициент
+                    // (data[pos] + data[pos + 1] + data[pos + 2]) / 3) - усредненный пиксель по RGB
                     sum += ((data[pos] + data[pos + 1] + data[pos + 2]) / 3) * M[(j + N) * (2 * N + 1) + (i + N)];
                 }
             }
